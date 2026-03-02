@@ -24,6 +24,16 @@ mkdir -p "$OUTPUT_DIR"
 # Tarball download URL for standalone mode
 TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/briankelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
 
+# HuggingFace token (required - dataset is private)
+if [ -z "$HF_TOKEN" ]; then
+    HF_TOKEN=$(grep -i 'hugging face' ~/API_KEYS.vault 2>/dev/null | head -1 | awk -F'|' '{print $2}' | tr -d ' ')
+fi
+if [ -z "$HF_TOKEN" ]; then
+    echo "ERROR: HuggingFace token not found."
+    echo "  Set HF_TOKEN env var or add 'Hugging Face | hf_...' to ~/API_KEYS.vault"
+    exit 1
+fi
+
 # Parse arguments
 REBUILD=false
 STANDALONE=false
@@ -80,7 +90,7 @@ if ! docker image inspect "$IMAGE_NAME" &>/dev/null || [ "$REBUILD" == "true" ];
     echo "Building Docker image (this takes a few minutes the first time)..."
     echo ""
     cd "$SCRIPT_DIR"
-    docker build -f Dockerfile.training -t "$IMAGE_NAME" .
+    docker build -f Dockerfile.training --build-arg HF_TOKEN="$HF_TOKEN" -t "$IMAGE_NAME" .
     echo ""
     echo "Docker image built successfully."
     echo ""
@@ -280,6 +290,7 @@ DOCKER_ARGS=(
 if [ "$STANDALONE" == "true" ]; then
     DOCKER_ARGS+=( -e STANDALONE=1 )
     DOCKER_ARGS+=( -e TARBALL_URL="$TARBALL_URL" )
+    DOCKER_ARGS+=( -e HF_TOKEN="$HF_TOKEN" )
 else
     DOCKER_ARGS+=( -v "$DATA_DIR:/data:ro" )
 fi
