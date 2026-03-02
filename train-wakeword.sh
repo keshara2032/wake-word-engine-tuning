@@ -22,12 +22,7 @@ OUTPUT_DIR="$SCRIPT_DIR/docker-output"
 mkdir -p "$OUTPUT_DIR"
 
 # Tarball download URL for standalone mode
-TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/briankelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
-
-# HuggingFace token (auto-read from API_KEYS.vault, needed for standalone tarball download)
-if [ -z "$HF_TOKEN" ]; then
-    HF_TOKEN=$(grep -i 'hugging face' ~/API_KEYS.vault 2>/dev/null | head -1 | awk -F'|' '{print $2}' | tr -d ' ')
-fi
+TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/brianckelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
 
 # Parse arguments
 REBUILD=false
@@ -283,14 +278,8 @@ DOCKER_ARGS=(
 )
 
 if [ "$STANDALONE" == "true" ]; then
-    if [ -z "$HF_TOKEN" ]; then
-        echo "ERROR: HuggingFace token required for standalone mode (tarball download)."
-        echo "  Set HF_TOKEN env var or add 'Hugging Face | hf_...' to ~/API_KEYS.vault"
-        exit 1
-    fi
     DOCKER_ARGS+=( -e STANDALONE=1 )
     DOCKER_ARGS+=( -e TARBALL_URL="$TARBALL_URL" )
-    DOCKER_ARGS+=( -e HF_TOKEN="$HF_TOKEN" )
 else
     DOCKER_ARGS+=( -v "$DATA_DIR:/data:ro" )
 fi

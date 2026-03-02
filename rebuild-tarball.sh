@@ -15,7 +15,7 @@
 
 set -e
 
-HF_DATASET="briankelley/atlas-voice-training-data"
+HF_DATASET="brianckelley/atlas-voice-training-data"
 HF_BASE="https://huggingface.co/datasets/${HF_DATASET}/resolve/main"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

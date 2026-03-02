@@ -12,7 +12,7 @@
 # Usage: ./train.sh [config.yml]
 # Default config: hey_atlas_config.yml
 #
-# Training data hosted at: https://huggingface.co/datasets/briankelley/atlas-voice-training-data
+# Training data hosted at: https://huggingface.co/datasets/brianckelley/atlas-voice-training-data
 
 set -e
 cd "$(dirname "$0")"
@@ -44,7 +44,7 @@ if [ "$LOG_ENABLED" = true ]; then
 fi
 
 # HuggingFace dataset for training resources
-HF_DATASET="briankelley/atlas-voice-training-data"
+HF_DATASET="brianckelley/atlas-voice-training-data"
 HF_BASE="https://huggingface.co/datasets/${HF_DATASET}/resolve/main"
 
 # Pinned commits for reproducibility (match Dockerfile.training)

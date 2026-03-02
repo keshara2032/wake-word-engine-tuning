@@ -128,7 +128,7 @@ if [ "${STANDALONE:-0}" == "1" ]; then
     echo "[Standalone Mode] Downloading training data..."
     echo ""
 
-    TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/briankelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
+    TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/brianckelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
     TARBALL_FILE="/tmp/atlas-voice-training-data.tar.gz"
 
     # -------------------------------------------------------------------------
@@ -143,7 +143,7 @@ if [ "${STANDALONE:-0}" == "1" ]; then
         echo "  Downloading training data tarball (~20GB)..."
         echo "  Source: $TARBALL_URL"
         echo ""
-        wget --progress=bar:force:noscroll --header="Authorization: Bearer ${HF_TOKEN}" -O "$TARBALL_FILE" "$TARBALL_URL"
+        wget --progress=bar:force:noscroll -O "$TARBALL_FILE" "$TARBALL_URL"
         echo ""
         echo "  Extracting tarball..."
         tar xzf "$TARBALL_FILE" -C "$WORKSPACE/"
