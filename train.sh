@@ -1,11 +1,18 @@
 #!/bin/bash
-# Train custom wake word model for OpenWakeWord
-# https://github.com/briankelley/openWakeWord
+# Bare-metal training script - installs everything natively on the host.
+#
+# This is the NON-Docker path. It installs Python packages, clones repos,
+# downloads training data, and runs training directly on your machine.
+# Use this for testing the full dependency stack outside of a container.
+#
+# For the containerized path (recommended), use ./train-wakeword.sh instead,
+# which builds a Docker image via Dockerfile.training with all dependencies
+# frozen and isolated.
 #
 # Usage: ./train.sh [config.yml]
 # Default config: hey_atlas_config.yml
 #
-# Training data hosted at: https://huggingface.co/datasets/brianckelley/atlas-voice-training-data
+# Training data hosted at: https://huggingface.co/datasets/briankelley/atlas-voice-training-data
 
 set -e
 cd "$(dirname "$0")"
@@ -37,7 +44,7 @@ if [ "$LOG_ENABLED" = true ]; then
 fi
 
 # HuggingFace dataset for training resources
-HF_DATASET="brianckelley/atlas-voice-training-data"
+HF_DATASET="briankelley/atlas-voice-training-data"
 HF_BASE="https://huggingface.co/datasets/${HF_DATASET}/resolve/main"
 
 # Pinned commits for reproducibility (match Dockerfile.training)

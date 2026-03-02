@@ -128,11 +128,11 @@ if [ "${STANDALONE:-0}" == "1" ]; then
     echo "[Standalone Mode] Downloading training data..."
     echo ""
 
-    TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/brianckelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
+    TARBALL_URL="${TARBALL_URL:-https://huggingface.co/datasets/briankelley/atlas-voice-training-data/resolve/main/archive/atlas-voice-training-data.tar.gz}"
     TARBALL_FILE="/tmp/atlas-voice-training-data.tar.gz"
 
     # -------------------------------------------------------------------------
-    # Download tarball (~20GB) — contains all training data including MIT RIRs
+    # Download tarball (~20GB) - contains all training data including MIT RIRs
     # -------------------------------------------------------------------------
     if [ -f "$WORKSPACE/openwakeword_features_ACAV100M_2000_hrs_16bit.npy" ] && \
        [ -f "$WORKSPACE/validation_set_features.npy" ] && \

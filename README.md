@@ -23,7 +23,7 @@ All packages and dependencies are handled inside the container.
 ## Quick Start
 
 ```bash
-git clone https://github.com/brianckelley/atlas-voice.git
+git clone https://github.com/briankelley/atlas-voice.git
 cd atlas-voice
 ./train-wakeword.sh
 ```
@@ -95,7 +95,7 @@ The defaults produce the best balance of accuracy and recall based on empirical 
 
 ## Training Data
 
-Training data is hosted on [HuggingFace](https://huggingface.co/datasets/brianckelley/atlas-voice-training-data) and downloaded automatically in standalone mode (~20GB as a single tarball).
+Training data is hosted on [HuggingFace](https://huggingface.co/datasets/briankelley/atlas-voice-training-data) and downloaded automatically in standalone mode (~20GB as a single tarball).
 
 | File | Size | Purpose |
 |------|------|---------|
