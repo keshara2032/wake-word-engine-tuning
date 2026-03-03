@@ -1,22 +1,16 @@
-(*Update 02 March 2026: Looks like I had a pretty serious omission / misconfiguration of the script that downloads the big training data tar ball from huggingface.co. I made some fixes and as of today have confirmed a full start to finish run using the instructions in this repo. Apologies for anyone who got snagged on my errors.*)
-
-
+Now that AI handles the syntax, a programmer's real job is articulating intent - translating an idea for an app into plain language for the model to execute. Instead of pounding that out on a keyboard, why not just talk to your computer? This repository is a Dockerized training pipeline for custom audio trigger models (compatible with OpenAI Whisper and [Faster Whisper](https://github.com/SYSTRAN/faster-whisper)). Define vocal shortcuts, wake words, or navigational phrases like "Hey Dummy", "Ok Computer", "Hey Jarvis", then use them with [Atlas Voice](https://github.com/briankelley/atlas-voice) or your own client-side app.
 
 # OpenWakeWord Custom Wake Word Training (Dockerized)
 
-Train your own custom wake word model for [OpenWakeWord](https://github.com/briankelley/openWakeWord) (containerized).
+### The Dependency Problem
 
-## The Dependency Problem
+This project exists because training OpenWakeWord models in 2026 is a dependency nightmare. The training pipeline requires PyTorch 1.13.1, TensorFlow 2.8.1, and dozens of other packages pinned to 2022-era versions that have since aged out of compatibility with modern Python. The `train-wakeword.sh` script will build a complete dockerized training solution. The Docker image freezes the working environment of openWakeWord to commit 368c037 (main on February 1, 2026).
 
-This project exists because training OpenWakeWord models in 2026 is a dependency nightmare. The training pipeline requires PyTorch 1.13.1, TensorFlow 2.8.1, and dozens of other packages pinned to 2022-era versions that have since aged out of compatibility with modern Python. The `train.sh` script in this repo documents every fix discovered through days of debugging. The Docker image freezes the working environment of openWakeWord to commit 368c037 (main on February 1, 2026).
-
-tl;dr I didn't want to say "Hey Jarvis" to my computer and the original openwakeword training process wasn't actively maintained. I fixed it.
-
-## Objective
+### Objective
 
 Builds a Docker container, downloads training data, generates synthetic speech samples, augments them with common noise, trains a neural network, and outputs a model file (~200KB) that can listen for your wake word.
 
-## Requirements
+### Requirements
 
 - **NVIDIA GPU** with CUDA support
 - **Docker** with [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
@@ -24,7 +18,7 @@ Builds a Docker container, downloads training data, generates synthetic speech s
 
 All packages and dependencies are handled inside the container.
 
-## Quick Start
+### Quick Start
 
 ```bash
 git clone https://github.com/briankelley/atlas-voice-training.git
@@ -60,7 +54,7 @@ Launch the main script and it'll walk you through the process:
 ═══════════════════════════════════════════════════════
 ```
 
-## Using the Model
+### Using the Model
 
 Copy the `.tflite` file to `~/.local/share/openwakeword/` for use with OpenWakeWord.
 
@@ -72,7 +66,7 @@ The trained model handles wake word detection only. To build a full voice input 
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Speech-to-text transcription after the wake word triggers |
 | [sounddevice](https://python-sounddevice.readthedocs.io/) | Audio capture from your microphone |
 
-## Wake Word Selection
+### Wake Word Selection
 
 **Use a two-word phrase.** This was a big factor in model quality across every configuration I tested. A prefix like "Hey" or "Okay" gives the model a stronger acoustic signature.
 
@@ -86,7 +80,7 @@ The trained model handles wake word detection only. To build a full voice input 
 
 No combination of augmentation rounds, sample count, or neuron depth made the model more accurate when the "Hey" prefix was dropped.
 
-## Training Settings
+### Training Settings
 
 The defaults produce the best balance of accuracy and recall based on empirical testing. You can change this before training. Hat tip to [@dscripka](https://github.com/dscripka) for great defaults.
 
@@ -97,7 +91,7 @@ The defaults produce the best balance of accuracy and recall based on empirical 
 | Training steps | 100,000 | Neural network training iterations | 150k steps didn't improve results |
 | Layer size | 32 | Neurons per hidden layer | 64 neurons produced identical results to 32 |
 
-## Training Data
+### Training Data
 
 Training data is hosted on [HuggingFace](https://huggingface.co/datasets/brianckelley/atlas-voice-training-data) and downloaded automatically in standalone mode (~20GB as a single tarball).
 
@@ -112,7 +106,7 @@ Training data is hosted on [HuggingFace](https://huggingface.co/datasets/brianck
 
 All training data is bundled in a single ~20GB tarball and downloaded automatically.
 
-## How It Works
+### How It Works
 
 Training runs in three phases inside the container (start to finish with defaults and broadband is ~1h on a 4090):
 
@@ -122,7 +116,7 @@ Training runs in three phases inside the container (start to finish with default
 
 The output is an ONNX model and a TFLite model, both under 250KB.
 
-## Files
+### Files
 
 | File | Purpose |
 |------|---------|
@@ -147,7 +141,7 @@ The output is an ONNX model and a TFLite model, both under 250KB.
 11. Training segfaults on cleanup after model is already saved (harmless)
 12. Python output buffering in Docker hides progress (`PYTHONUNBUFFERED=1`)
 
-## License
+### License
 
 - Training scripts and configs: Apache 2.0
 - ACAV100M features: CC-BY-NC-SA-4.0 (non-commercial)
@@ -155,7 +149,7 @@ The output is an ONNX model and a TFLite model, both under 250KB.
 
 **Note:** The CC-BY-NC-SA-4.0 license on ACAV100M means trained models inherit a non-commercial restriction.
 
-## Acknowledgments
+### Acknowledgments
 
 - [OpenWakeWord](https://github.com/dscripka/openWakeWord) by David Scripka (this repo uses a [pinned fork](https://github.com/briankelley/openWakeWord))
 - [Piper Sample Generator](https://github.com/dscripka/piper-sample-generator) by David Scripka ([pinned fork](https://github.com/briankelley/piper-sample-generator))
