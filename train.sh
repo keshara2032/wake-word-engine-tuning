@@ -24,15 +24,6 @@ LOG_ENABLED=true                    # Set to false to disable logging
 DEBUG_DIR="atlas-voice-debug"       # Directory for logs and debug output
 START_TIME=$(date +%s)              # Track total runtime
 
-# =============================================================================
-# Training Parameters (adjust these for quality vs time tradeoff)
-# =============================================================================
-N_SAMPLES=100000                    # Synthetic training samples (default: 50000)
-N_SAMPLES_VAL=10000                 # Validation samples (default: 5000)
-AUGMENTATION_ROUNDS=2               # Augmentation passes per sample (default: 2)
-TRAINING_STEPS=150000               # Neural network training steps (default: 100000)
-# Rough time estimate: 1 hour baseline, scales ~linearly with samples/steps
-
 # Set up debug directory and logging
 mkdir -p "$DEBUG_DIR"
 LOG_FILE="$DEBUG_DIR/train_$(date +%Y%m%d_%H%M%S).log"
@@ -59,13 +50,8 @@ for arg in "$@"; do
     esac
 done
 
-# Update config file with training parameters from script header
-sed -i "s/^n_samples:.*/n_samples: $N_SAMPLES/" "$CONFIG"
-sed -i "s/^n_samples_val:.*/n_samples_val: $N_SAMPLES_VAL/" "$CONFIG"
-sed -i "s/^augmentation_rounds:.*/augmentation_rounds: $AUGMENTATION_ROUNDS/" "$CONFIG"
-sed -i "s/^steps:.*/steps: $TRAINING_STEPS/" "$CONFIG"
-
 MODEL_NAME=$(grep "model_name:" "$CONFIG" | awk '{print $2}' | tr -d '"')
+OUTPUT_DIR=$(grep "output_dir:" "$CONFIG" | awk '{print $2}' | tr -d '"')
 
 echo "=============================================="
 echo "OpenWakeWord Custom Model Training"
@@ -74,10 +60,8 @@ echo "Started: $(date)"
 echo "Config: $CONFIG"
 echo "Model: $MODEL_NAME"
 echo ""
-echo "Training Parameters:"
-echo "  Samples: $N_SAMPLES (val: $N_SAMPLES_VAL)"
-echo "  Augmentation rounds: $AUGMENTATION_ROUNDS"
-echo "  Training steps: $TRAINING_STEPS"
+echo "Training Parameters (from $CONFIG):"
+grep -E "^(n_samples|augmentation_rounds|steps):" "$CONFIG" | sed 's/^/  /'
 echo "Working dir: $(pwd)"
 echo ""
 
@@ -590,9 +574,10 @@ echo "       This creates TTS samples of the wake word with variations..."
 $PYTHON openWakeWord/openwakeword/train.py --training_config "$CONFIG" --generate_clips
 echo "       Finished: $(date)"
 echo "  Synthetic clips generated."
-if [ -d "${MODEL_NAME}_model" ]; then
+mkdir -p "$OUTPUT_DIR"
+if [ -d "$OUTPUT_DIR" ]; then
     echo "  Output dir contents:"
-    ls -la "${MODEL_NAME}_model"/ 2>/dev/null | head -10 || true
+    ls -la "$OUTPUT_DIR"/ 2>/dev/null | head -10 || true
 fi
 echo ""
 
@@ -612,7 +597,7 @@ $PYTHON openWakeWord/openwakeword/train.py --training_config "$CONFIG" --train_m
 echo "       Finished: $(date)"
 
 # Check if model was saved (openWakeWord sometimes segfaults during cleanup AFTER saving)
-MODEL_FILE="${MODEL_NAME}_model/${MODEL_NAME}.onnx"
+MODEL_FILE="${OUTPUT_DIR}/${MODEL_NAME}.onnx"
 if [ -f "$MODEL_FILE" ]; then
     echo "  Training complete. Model saved: $MODEL_FILE ($(du -h "$MODEL_FILE" | cut -f1))"
 else
@@ -621,7 +606,7 @@ else
 fi
 
 # Convert ONNX to TFLite for broader compatibility
-TFLITE_FILE="${MODEL_NAME}_model/${MODEL_NAME}.tflite"
+TFLITE_FILE="${OUTPUT_DIR}/${MODEL_NAME}.tflite"
 echo "  Converting ONNX to TFLite..."
 $PYTHON << EOF
 import onnx
@@ -633,10 +618,10 @@ onnx_model = onnx.load("${MODEL_FILE}")
 
 # Convert to TensorFlow
 tf_rep = prepare(onnx_model)
-tf_rep.export_graph("${MODEL_NAME}_model/${MODEL_NAME}_tf")
+tf_rep.export_graph("${OUTPUT_DIR}/${MODEL_NAME}_tf")
 
 # Convert TensorFlow to TFLite
-converter = tf.lite.TFLiteConverter.from_saved_model("${MODEL_NAME}_model/${MODEL_NAME}_tf")
+converter = tf.lite.TFLiteConverter.from_saved_model("${OUTPUT_DIR}/${MODEL_NAME}_tf")
 tflite_model = converter.convert()
 
 # Save TFLite model
@@ -647,7 +632,7 @@ print(f"  TFLite model saved: ${TFLITE_FILE}")
 EOF
 
 # Clean up intermediate TF model
-rm -rf "${MODEL_NAME}_model/${MODEL_NAME}_tf"
+rm -rf "${OUTPUT_DIR}/${MODEL_NAME}_tf"
 
 if [ -f "$TFLITE_FILE" ]; then
     echo "  TFLite conversion complete: $TFLITE_FILE ($(du -h "$TFLITE_FILE" | cut -f1))"
@@ -660,7 +645,7 @@ echo "  [Step 6/6] DONE"
 echo ""
 
 # Report results
-MODEL_DIR="./${MODEL_NAME}_model"
+MODEL_DIR="$OUTPUT_DIR"
 echo ""
 END_TIME=$(date +%s)
 RUNTIME=$((END_TIME - START_TIME))

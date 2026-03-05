@@ -1,9 +1,7 @@
 ## Configuration for training "Hey Atlas" wake word model
 
-# Model name
 model_name: "hey_atlas"
-
-# Target phrase - what we want to detect
+output_dir: "./hey_atlas_model"
 target_phrase:
   - "hey atlas"
 
@@ -16,8 +14,8 @@ custom_negative_phrases:
   - "say atlas"
 
 # Number of synthetic samples to generate
-n_samples: 50000
-n_samples_val: 5000
+n_samples: 100000
+n_samples_val: 10000
 
 # TTS batch size
 tts_batch_size: 50
@@ -28,7 +26,7 @@ augmentation_rounds: 2
 
 # Paths (relative to training directory)
 piper_sample_generator_path: "./piper-sample-generator"
-output_dir: "./hey_atlas_model"
+
 
 # Room impulse responses
 rir_paths:
@@ -51,8 +49,8 @@ feature_data_files:
 # Batch composition
 batch_n_per_class:
   "ACAV100M_sample": 1024
-  "adversarial_negative": 100
-  "positive": 100
+  "adversarial_negative": 50
+  "positive": 50
 
 # Model architecture
 model_type: "dnn"
@@ -61,7 +59,7 @@ layer_size: 32
 # Training parameters
 steps: 100000
 max_negative_weight: 1500
-target_false_positives_per_hour: 0.1
+target_false_positives_per_hour: 0.2
 target_accuracy: 0.7
 target_recall: 0.5
 

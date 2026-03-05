@@ -60,23 +60,23 @@ Copy the `.tflite` file to `~/.local/share/openwakeword/` for use with OpenWakeW
 
 The trained model handles wake word detection only. To build a full voice input pipeline, you also need:
 
-| Package | Purpose |
-|---------|---------|
-| [OpenWakeWord](https://github.com/briankelley/openWakeWord) | Loads the `.tflite` model and listens for the wake word |
+| Package                                                     | Purpose                                                   |
+| ----------------------------------------------------------- | --------------------------------------------------------- |
+| [OpenWakeWord](https://github.com/briankelley/openWakeWord) | Loads the `.tflite` model and listens for the wake word   |
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | Speech-to-text transcription after the wake word triggers |
-| [sounddevice](https://python-sounddevice.readthedocs.io/) | Audio capture from your microphone |
+| [sounddevice](https://python-sounddevice.readthedocs.io/)   | Audio capture from your microphone                        |
 
 ### Wake Word Selection
 
 **Use a two-word phrase.** This was a big factor in model quality across every configuration I tested. A prefix like "Hey" or "Okay" gives the model a stronger acoustic signature.
 
-| Wake Word | Accuracy | Recall | FP/hr | Verdict |
-|-----------|----------|--------|-------|---------|
-| "Hey Atlas" (50k samples) | **81.10%** | **62.48%** | 2.12 | Best overall |
-| "Globe Master" (50k samples) | 81.07% | 62.20% | **1.24** | Two-word phrase, consistent |
-| "Hey Atlas" (100k samples) | 77.47% | 55.08% | 0.62 | More conservative, worse recall |
-| "Atlas" (50k, 3 aug rounds) | 71.64% | 43.54% | 2.57 | Single word, consistently worse |
-| "Atlas" (50k, 64 neurons) | 71.94% | 44.04% | 2.48 | Extra neurons didn't help |
+| Wake Word                    | Accuracy   | Recall     | FP/hr    | Verdict                         |
+| ---------------------------- | ---------- | ---------- | -------- | ------------------------------- |
+| "Hey Atlas" (50k samples)    | **81.10%** | **62.48%** | 2.12     | Best overall                    |
+| "Globe Master" (50k samples) | 81.07%     | 62.20%     | **1.24** | Two-word phrase, consistent     |
+| "Hey Atlas" (100k samples)   | 77.47%     | 55.08%     | 0.62     | More conservative, worse recall |
+| "Atlas" (50k, 3 aug rounds)  | 71.64%     | 43.54%     | 2.57     | Single word, consistently worse |
+| "Atlas" (50k, 64 neurons)    | 71.94%     | 44.04%     | 2.48     | Extra neurons didn't help       |
 
 No combination of augmentation rounds, sample count, or neuron depth made the model more accurate when the "Hey" prefix was dropped.
 
@@ -84,25 +84,25 @@ No combination of augmentation rounds, sample count, or neuron depth made the mo
 
 The defaults produce the best balance of accuracy and recall based on empirical testing. You can change this before training. Hat tip to [@dscripka](https://github.com/dscripka) for great defaults.
 
-| Setting | Default | Purpose | Testing Notes |
-|---------|---------|--------------|---------------|
-| Samples | 50,000 | Number of synthetic speech clips generated | Doubling to 100k didn't improve accuracy or recall |
-| Augmentation rounds | 2 | Times each clip is re-processed with noise/reverb | 3 rounds produced no measurable improvement |
-| Training steps | 100,000 | Neural network training iterations | 150k steps didn't improve results |
-| Layer size | 32 | Neurons per hidden layer | 64 neurons produced identical results to 32 |
+| Setting             | Default | Purpose                                           | Testing Notes                                      |
+| ------------------- | ------- | ------------------------------------------------- | -------------------------------------------------- |
+| Samples             | 50,000  | Number of synthetic speech clips generated        | Doubling to 100k didn't improve accuracy or recall |
+| Augmentation rounds | 2       | Times each clip is re-processed with noise/reverb | 3 rounds produced no measurable improvement        |
+| Training steps      | 100,000 | Neural network training iterations                | 150k steps didn't improve results                  |
+| Layer size          | 32      | Neurons per hidden layer                          | 64 neurons produced identical results to 32        |
 
 ### Training Data
 
 Training data is hosted on [HuggingFace](https://huggingface.co/datasets/brianckelley/atlas-voice-training-data) and downloaded automatically in standalone mode (~20GB as a single tarball).
 
-| File | Size | Purpose |
-|------|------|---------|
-| ACAV100M features | 17 GB | 2,000 hours of pre-computed negative examples |
-| MUSAN music | 4.6 GB | Background audio for augmentation |
-| MIT Room Impulse Responses | 300 MB | Room reverb simulation (pre-converted to 16kHz) |
-| Validation features | 177 MB | False positive testing during training |
-| Piper TTS model | 200 MB | Synthetic speech generation |
-| Embedding models | ~10 MB | OpenWakeWord melspectrogram and embedding inference |
+| File                       | Size   | Purpose                                             |
+| -------------------------- | ------ | --------------------------------------------------- |
+| ACAV100M features          | 17 GB  | 2,000 hours of pre-computed negative examples       |
+| MUSAN music                | 4.6 GB | Background audio for augmentation                   |
+| MIT Room Impulse Responses | 300 MB | Room reverb simulation (pre-converted to 16kHz)     |
+| Validation features        | 177 MB | False positive testing during training              |
+| Piper TTS model            | 200 MB | Synthetic speech generation                         |
+| Embedding models           | ~10 MB | OpenWakeWord melspectrogram and embedding inference |
 
 All training data is bundled in a single ~20GB tarball and downloaded automatically.
 
@@ -118,13 +118,13 @@ The output is an ONNX model and a TFLite model, both under 250KB.
 
 ### Files
 
-| File | Purpose |
-|------|---------|
-| `train-wakeword.sh` | What you run - interactive host wrapper (run this on your rig) |
-| `train.sh` | Bare-metal path - installs and runs everything natively without Docker |
-| `container-entrypoint.sh` | Runs inside the Docker container |
-| `Dockerfile.training` | Builds the training environment |
-| `validate_model.py` | Compare model accuracy against test data |
+| File                      | Purpose                                                                |
+| ------------------------- | ---------------------------------------------------------------------- |
+| `train-wakeword.sh`       | What you run - interactive host wrapper (run this on your rig)         |
+| `train.sh`                | Bare-metal path - installs and runs everything natively without Docker |
+| `container-entrypoint.sh` | Runs inside the Docker container                                       |
+| `Dockerfile.training`     | Builds the training environment                                        |
+| `validate_model.py`       | Compare model accuracy against test data                               |
 
 ### Issues encountered and fixed (all from the upstream dependency stack):
 
