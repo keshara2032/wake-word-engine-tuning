@@ -8,6 +8,12 @@
 
 set -e
 
+# Limit glibc malloc arenas on WSL2 to prevent heap corruption
+# during multi-threaded ONNX CPU inference (GH issue #1)
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    export MALLOC_ARENA_MAX=2
+fi
+
 # =============================================================================
 # Training Parameters (from environment, set by host wrapper)
 # =============================================================================
