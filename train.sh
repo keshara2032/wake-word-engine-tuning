@@ -23,6 +23,15 @@ cd "$(dirname "$0")"
 LOG_ENABLED=true                    # Set to false to disable logging
 DEBUG_DIR="atlas-voice-debug"       # Directory for logs and debug output
 START_TIME=$(date +%s)              # Track total runtime
+IS_WSL=false
+
+if grep -qiE "(microsoft|wsl)" /proc/version 2>/dev/null || uname -r | grep -qi microsoft; then
+    IS_WSL=true
+fi
+
+if [ "$IS_WSL" = true ] && [ -d "/usr/lib/wsl/lib" ]; then
+    export LD_LIBRARY_PATH="/usr/lib/wsl/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
 
 # Set up debug directory and logging
 mkdir -p "$DEBUG_DIR"
@@ -96,34 +105,49 @@ if command -v nvidia-smi &> /dev/null; then
     echo "[CUDA Compute Check]"
     CUDA_READY=true
 
-    if lsmod | grep -q nvidia_uvm; then
-        echo "  nvidia-uvm module: loaded"
+    if [ "$IS_WSL" = true ]; then
+        echo "  WSL2 detected: skipping native Linux nvidia-uvm/device-node checks"
+        if [ -e /dev/dxg ]; then
+            echo "  /dev/dxg:         present"
+        else
+            echo "  /dev/dxg:         MISSING"
+            echo "    WSL GPU passthrough is not available to this distro."
+            CUDA_READY=false
+        fi
     else
-        echo "  nvidia-uvm module: NOT LOADED"
-        echo "    The nvidia-uvm kernel module must be loaded for GPU compute."
-        echo "    Fix: sudo modprobe nvidia-uvm"
-        CUDA_READY=false
-    fi
+        if lsmod | grep -q nvidia_uvm; then
+            echo "  nvidia-uvm module: loaded"
+        else
+            echo "  nvidia-uvm module: NOT LOADED"
+            echo "    The nvidia-uvm kernel module must be loaded for GPU compute."
+            echo "    Fix: sudo modprobe nvidia-uvm"
+            CUDA_READY=false
+        fi
 
-    if [ -e /dev/nvidia-uvm ]; then
-        echo "  /dev/nvidia-uvm:   present"
-    else
-        echo "  /dev/nvidia-uvm:   MISSING"
-        echo "    Device node must exist for CUDA. Check that nvidia-uvm-init.service ran."
-        CUDA_READY=false
-    fi
+        if [ -e /dev/nvidia-uvm ]; then
+            echo "  /dev/nvidia-uvm:   present"
+        else
+            echo "  /dev/nvidia-uvm:   MISSING"
+            echo "    Device node must exist for CUDA. Check that nvidia-uvm-init.service ran."
+            CUDA_READY=false
+        fi
 
-    if [ -e /dev/nvidia0 ]; then
-        echo "  /dev/nvidia0:      present"
-    else
-        echo "  /dev/nvidia0:      MISSING"
-        CUDA_READY=false
+        if [ -e /dev/nvidia0 ]; then
+            echo "  /dev/nvidia0:      present"
+        else
+            echo "  /dev/nvidia0:      MISSING"
+            CUDA_READY=false
+        fi
     fi
 
     if [ "$CUDA_READY" = false ]; then
         echo ""
         echo "  CUDA compute prerequisites are missing. GPU training will NOT work."
-        echo "  If running from a custom live ISO, check: systemctl status nvidia-uvm-init"
+        if [ "$IS_WSL" = true ]; then
+            echo "  In WSL, confirm the Windows NVIDIA driver is installed and GPU support is enabled."
+        else
+            echo "  If running from a custom live ISO, check: systemctl status nvidia-uvm-init"
+        fi
         echo ""
         read -p "  Continue anyway (CPU-only, much slower)? [y/N] " -n 1 -r
         echo ""
@@ -426,8 +450,16 @@ if [ ! -f "piper-sample-generator/models/en-us-libritts-high.pt" ]; then
 fi
 
 echo "  Installing PyTorch stack (pinned versions)..."
-echo "    torch==1.13.1 torchaudio==0.13.1"
-$PIP install torch==1.13.1 torchaudio==0.13.1
+if command -v nvidia-smi &> /dev/null; then
+    echo "    torch==1.13.1 torchaudio==0.13.1 (CUDA 11.7 wheel)"
+    $PIP install \
+        torch==1.13.1+cu117 \
+        torchaudio==0.13.1+cu117 \
+        --extra-index-url https://download.pytorch.org/whl/cu117
+else
+    echo "    torch==1.13.1 torchaudio==0.13.1"
+    $PIP install torch==1.13.1 torchaudio==0.13.1
+fi
 echo "  Verifying PyTorch + CUDA..."
 CUDA_AVAIL=$($PYTHON -c "import torch; avail = torch.cuda.is_available(); print(f'    torch {torch.__version__} - CUDA available: {avail}'); exit(0 if avail else 1)" 2>&1) || true
 echo "$CUDA_AVAIL"
@@ -441,9 +473,15 @@ if echo "$CUDA_AVAIL" | grep -q "CUDA available: False"; then
     echo "  Training will fall back to CPU (MUCH slower)."
     echo ""
     echo "  Diagnostics:"
-    echo "    nvidia-uvm loaded: $(lsmod | grep -q nvidia_uvm && echo 'yes' || echo 'NO')"
-    echo "    /dev/nvidia-uvm:   $([ -e /dev/nvidia-uvm ] && echo 'exists' || echo 'MISSING')"
-    echo "    /dev/nvidia0:      $([ -e /dev/nvidia0 ] && echo 'exists' || echo 'MISSING')"
+    if [ "$IS_WSL" = true ]; then
+        echo "    WSL2 detected:    yes"
+        echo "    /dev/dxg:         $([ -e /dev/dxg ] && echo 'exists' || echo 'MISSING')"
+        echo "    Windows driver:   update/check NVIDIA WSL-compatible driver"
+    else
+        echo "    nvidia-uvm loaded: $(lsmod | grep -q nvidia_uvm && echo 'yes' || echo 'NO')"
+        echo "    /dev/nvidia-uvm:   $([ -e /dev/nvidia-uvm ] && echo 'exists' || echo 'MISSING')"
+        echo "    /dev/nvidia0:      $([ -e /dev/nvidia0 ] && echo 'exists' || echo 'MISSING')"
+    fi
     echo ""
     read -p "  Continue without GPU? [y/N] " -n 1 -r
     echo ""
